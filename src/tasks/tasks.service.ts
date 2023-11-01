@@ -1,35 +1,35 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+// src/tasks/tasks.service.ts
+
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { Task } from './task.model';
 
 @Injectable()
 export class TasksService {
-  private tasks: Task[] = [];
-  getAllTask(): Task[] {
-    return this.tasks;
+  constructor(@InjectModel('Task') private readonly taskModel: Model<Task>) {}
+
+  async createTask(task: Task): Promise<Task> {
+    const newTask = new this.taskModel(task);
+    return await newTask.save();
   }
-  postTask(task: Task) {
-    const newTask = { id: Date.now(), ...task };
-    this.tasks.push(newTask);
-    return this.tasks;
+
+  async getTasks(): Promise<Task[]> {
+    return await this.taskModel.find().exec();
   }
-  getTaskById(id: string): Task {
-    const task = this.tasks.find((t) => t.id === parseInt(id));
-    if (!task) {
-      throw new NotFoundException('Tarea no encontrada');
-    }
-    return task;
+
+  async getTaskById(id: string): Promise<Task> {
+    return await this.taskModel.findById(id).exec();
   }
-  putTask(id: string, updatedTask: Task): Task {
-    const taskIndex = this.tasks.findIndex((t) => t.id === parseInt(id));
-    this.tasks[taskIndex] = { ...this.tasks[taskIndex], ...updatedTask };
-    return this.tasks[taskIndex];
+
+  async updateTask(id: string, updatedTask: Task): Promise<Task> {
+    return await this.taskModel
+      .findByIdAndUpdate(id, updatedTask, { new: true })
+      .exec();
   }
-  deleteTask(id: string): string {
-    const taskIndex = this.tasks.findIndex((t) => t.id === parseInt(id));
-    if (taskIndex === -1) {
-      throw new NotFoundException('Tarea no encontrada');
-    }
-    this.tasks.splice(taskIndex, 1);
+
+  async deleteTask(id: string): Promise<string> {
+    await this.taskModel.findByIdAndRemove(id).exec();
     return 'Tarea eliminada con éxito';
   }
 }

@@ -1,11 +1,14 @@
+// src/tasks/tasks.controller.ts
+
 import {
-  Body,
   Controller,
-  Delete,
   Get,
-  Param,
   Post,
   Put,
+  Delete,
+  Param,
+  Body,
+  NotFoundException,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { Task } from './task.model';
@@ -13,24 +16,43 @@ import { Task } from './task.model';
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
-  @Get()
-  getTasks() {
-    return this.tasksService.getAllTask();
-  }
+
   @Post()
-  createTasks(@Body() task: Task) {
-    return this.tasksService.postTask(task);
+  async createTask(@Body() task: Task) {
+    const newTask = await this.tasksService.createTask(task);
+    return newTask;
   }
+
+  @Get()
+  async getTasks() {
+    const tasks = await this.tasksService.getTasks();
+    return tasks;
+  }
+
   @Get(':id')
-  getTask(@Param('id') id: string) {
-    return this.tasksService.getTaskById(id);
+  async getTask(@Param('id') id: string) {
+    const task = await this.tasksService.getTaskById(id);
+    if (!task) {
+      throw new NotFoundException('Tarea no encontrada');
+    }
+    return task;
   }
+
   @Put(':id')
-  updateTask(@Param('id') id: string, @Body() updatedTask: Task) {
-    return this.tasksService.putTask(id, updatedTask);
+  async updateTask(@Param('id') id: string, @Body() updatedTask: Task) {
+    const task = await this.tasksService.updateTask(id, updatedTask);
+    if (!task) {
+      throw new NotFoundException('Tarea no encontrada');
+    }
+    return task;
   }
+
   @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.tasksService.deleteTask(id);
+  async deleteTask(@Param('id') id: string) {
+    const result = await this.tasksService.deleteTask(id);
+    if (result === 'Tarea eliminada con éxito') {
+      return result;
+    }
+    throw new NotFoundException('Tarea no encontrada');
   }
 }
