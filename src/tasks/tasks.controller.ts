@@ -9,17 +9,22 @@ import {
   Param,
   Body,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { Task } from './task.model';
+import { TaskDTO } from './dto/taskRequest.dto';
+import { TaskUpdateDTO } from './dto/taskRequestUpdate.dto';
+import { AuthGuard } from '../auth/auth.guard';
 
+@UseGuards(AuthGuard)
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  async createTask(@Body() task: Task) {
-    const newTask = await this.tasksService.createTask(task);
+  async createTask(@Body() task: TaskDTO) {
+    const newTask = await this.tasksService.createTask(task as Task);
     return newTask;
   }
 
@@ -39,8 +44,11 @@ export class TasksController {
   }
 
   @Put(':id')
-  async updateTask(@Param('id') id: string, @Body() updatedTask: Task) {
-    const task = await this.tasksService.updateTask(id, updatedTask);
+  async updateTask(
+    @Param('id') id: string,
+    @Body() updatedTask: TaskUpdateDTO,
+  ) {
+    const task = await this.tasksService.updateTask(id, updatedTask as Task);
     if (!task) {
       throw new NotFoundException('Tarea no encontrada');
     }
